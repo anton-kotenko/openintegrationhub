@@ -1,0 +1,49 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+ name: flows-operator
+    namespace: platform
+    labels:
+     app: flows-operator
+spec:
+ replicas: 1
+ selector:
+  matchLabels:
+   app: flows-operator
+ template:
+  metadata:
+   name: flows-operator
+   labels:
+    app: flows-operator
+  spec:
+   containers:
+   - name: flows-operator
+     image: openintegrationhub/flows-operator:latest
+     env:
+     - name: LISTEN_PORT
+       value: '1234'
+     - name: RABBITMQ_URI
+       value: amqp://guest:guest@rabbitmq-service.platform.svc.cluster.local
+     - name: SELF_URL
+       value: http://api-service.platform.svc.cluster.local
+     terminationMessagePath: "/dev/termination-log"
+     terminationMessagePolicy: File
+     imagePullPolicy: Always
+     securityContext:
+      privileged: false
+     livenessProbe:
+      httpGet:
+       path: "/healthcheck"
+       port: 1234
+     readinessProbe:
+      httpGet:
+       path: "/healthcheck"
+       port: 1234
+  serviceAccountName: flows-operator-account
+  restartPolicy: Always
+  terminationGracePeriodSeconds: 30
+ strategy:
+  type: RollingUpdate
+  rollingUpdate:
+   maxUnavailable: 1
+   maxSurge: 1
